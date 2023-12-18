@@ -85,7 +85,8 @@ lr = args.learning_rate
 for epoch in range(args.epochs):
     model.train()
     train_epoch_loss = []
-    for idx,(data_x,data_y) in enumerate(loader_train):
+    idx = 0
+    for data_x,data_y in loader_train:
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device)
         outputs = model(data_x)
@@ -99,6 +100,7 @@ for epoch in range(args.epochs):
         if idx%(len(loader_train)//2)==0:
             print("epoch={}/{},{}/{}of train, loss={}".format(
                 epoch, args.epochs, idx, len(loader_train),loss.item()))
+        idx += 1
     train_epochs_loss.append(np.average(train_epoch_loss))
     
     #=====================valid============================
