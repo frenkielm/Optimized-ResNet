@@ -18,7 +18,7 @@ import argparse
 
 ## 设立随机种子
 import random
-seed = 42
+seed = 2138
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
