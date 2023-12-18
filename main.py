@@ -30,6 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=300)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--model', type=str, default='Res20')
+parser.add_argument('--data_augment', type=str, default='baseline')
 args = parser.parse_args()
 args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -70,13 +71,13 @@ loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
 
+
+
+## 开始训练
 train_loss = []
 valid_loss = []
 train_epochs_loss = []
 valid_epochs_loss = []
-
-
-## 开始训练
 accuracy_val = []
 valid_loss_min = 1000
 counter = 0
@@ -119,7 +120,7 @@ for epoch in range(args.epochs):
     accuracy_val.append(right_sample/total_sample)
     valid_epochs_loss.append(np.average(valid_epoch_loss))
     
-    #=======================save==========================
+    #====================save model=======================
     if valid_loss <= valid_loss_min:
         print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,valid_loss))
         torch.save(model.state_dict(), 'checkpoint/resnet18_cifar10.pt')
