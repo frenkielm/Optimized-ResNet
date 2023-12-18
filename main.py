@@ -88,10 +88,10 @@ for epoch in range(args.epochs):
     idx = 0
     for data_x,data_y in loader_train:
         data_x = data_x.to(torch.float32).to(args.device)
-        data_y = data_y.to(torch.float32).to(args.device)
+        data_y = data_y.to(torch.float32).to(args.device).long()
         outputs = model(data_x)
         optimizer.zero_grad()
-        loss = loss_fn(outputs,outputs)
+        loss = loss_fn(outputs,data_y)
         loss.backward()
         optimizer.step()
 
@@ -108,9 +108,9 @@ for epoch in range(args.epochs):
     right_sample = 0
     model.eval()
     valid_epoch_loss = []
-    for idx,(data_x,data_y) in enumerate(loader_val):
+    for data_x,data_y in loader_train:
         data_x = data_x.to(torch.float32).to(args.device)
-        data_y = data_y.to(torch.float32).to(args.device)
+        data_y = data_y.to(torch.float32).to(args.device).long()
         outputs = model(data_x)
         loss = loss_fn(outputs, data_y)
         valid_epoch_loss.append(loss.item())
@@ -118,15 +118,15 @@ for epoch in range(args.epochs):
         _, preds = torch.max(outputs, 1)
         right_sample += (preds == data_y).sum()
         total_sample += preds.size(0)
-    print("Accuracy:",100*right_sample/total_sample,"%")
-    accuracy_val.append(right_sample/total_sample)
     valid_epochs_loss.append(np.average(valid_epoch_loss))
+    print("Accuracy:",100*int(right_sample)/int(total_sample),"%")
+    accuracy_val.append(right_sample/total_sample)
     
     #====================save model=======================
-    if valid_loss <= valid_loss_min:
-        print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,valid_loss))
+    if valid_epochs_loss[-1] <= valid_loss_min:
+        print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,valid_epochs_loss[-1]))
         torch.save(model.state_dict(), 'checkpoint/resnet18_cifar10.pt')
-        valid_loss_min = valid_loss
+        valid_loss_min = valid_epochs_loss[-1]
         counter = 0
     else:
         counter += 1
