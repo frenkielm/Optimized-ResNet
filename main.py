@@ -27,7 +27,7 @@ random.seed(seed)
 ## 定义超参数
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epoch', type=int, default=300)
+parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--model', type=str, default='Res20')
 parser.add_argument('--data_augment', type=str, default='baseline')
@@ -38,7 +38,7 @@ args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 ## 加载数据集
 
 cifar10_train = dset.CIFAR10('./dataset', train=True, download=True,
-                           transform=transform_augmented)
+                           transform=T.ToTensor()) #TAG
 
 cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
                            transform=T.ToTensor())
@@ -58,13 +58,13 @@ loader_test = DataLoader(cifar10_test, batch_size=64)
 
 ## 实例化模型
 if(args.model=='Res20'):
-    model = resnet20.to(args.device) 
+    model = resnet20().to(args.device) 
 elif(args.model=='Res32'):
-    model = resnet32.to(args.device)
+    model = resnet32().to(args.device)
 elif(args.model=='Res44'):
-    model = resnet44.to(args.device) 
+    model = resnet44().to(args.device) 
 elif(args.model=='Res56'):
-    model = resnet56.to(args.device)  
+    model = resnet56().to(args.device)  
 else:
     raise ValueError("Unsupported model: {}".format(args.model))
 loss_fn = nn.CrossEntropyLoss()
@@ -85,12 +85,12 @@ lr = args.learning_rate
 for epoch in range(args.epochs):
     model.train()
     train_epoch_loss = []
-    for idx,(data_x,data_y) in enumerate(loader_train,0):
+    for idx,(data_x,data_y) in enumerate(loader_train):
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device)
         outputs = model(data_x)
         optimizer.zero_grad()
-        loss = loss_fn(data_y,outputs)
+        loss = loss_fn(outputs,outputs)
         loss.backward()
         optimizer.step()
 
@@ -106,7 +106,7 @@ for epoch in range(args.epochs):
     right_sample = 0
     model.eval()
     valid_epoch_loss = []
-    for idx,(data_x,data_y) in enumerate(loader_val,0):
+    for idx,(data_x,data_y) in enumerate(loader_val):
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device)
         outputs = model(data_x)
