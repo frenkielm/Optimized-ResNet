@@ -41,7 +41,7 @@ class Cutout:
 transform_augmented = T.Compose([
     T.RandomHorizontalFlip(),
     T.RandomCrop(32, padding=4),
-    Cutout(n_holes=1, length=16),
+    # Cutout(n_holes=1, length=16),
     T.ToTensor()
 ])
 
