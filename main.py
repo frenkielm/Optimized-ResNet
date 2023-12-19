@@ -31,6 +31,7 @@ parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--model', type=str, default='Res20')
 parser.add_argument('--data_augment', type=str, default='baseline')
+parser.add_argument('--weight_decay', type=float, default=1e-2)
 args = parser.parse_args()
 args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -64,7 +65,7 @@ elif(args.model=='Res56'):
 else:
     raise ValueError("Unsupported model: {}".format(args.model))
 loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
 
 
@@ -104,7 +105,7 @@ for epoch in range(args.epochs):
     right_sample = 0
     model.eval()
     valid_epoch_loss = []
-    for data_x,data_y in loader_train:
+    for data_x,data_y in loader_val:
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device).long()
         outputs = model(data_x)
@@ -115,7 +116,8 @@ for epoch in range(args.epochs):
         right_sample += (preds == data_y).sum()
         total_sample += preds.size(0)
     valid_epochs_loss.append(np.average(valid_epoch_loss))
-    print("Accuracy:",100*int(right_sample)/int(total_sample),"%")
+    print("Val_Accuracy:",100*int(right_sample)/int(total_sample),"%")
+    print("Val_loss:",valid_epochs_loss[-1])
     accuracy_val.append(right_sample/total_sample)
     
     #====================save model=======================
