@@ -46,12 +46,8 @@ cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
 cifar10_test = dset.CIFAR10('./dataset', train=False, download=True,
                           transform=T.ToTensor())
 
-train_dataset_size = len(cifar10_train)
-NUM_TRAIN = int(train_dataset_size * 0.98)
-NUM_VAL = train_dataset_size - NUM_TRAIN
-
-loader_train = DataLoader(cifar10_train, batch_size=64, sampler=ChunkSampler(NUM_TRAIN, 0))
-loader_val = DataLoader(cifar10_val, batch_size=64, sampler=ChunkSampler(NUM_VAL, NUM_TRAIN))
+loader_train = DataLoader(cifar10_train, batch_size=64, sampler=ChunkSampler(49000, 0))
+loader_val = DataLoader(cifar10_val, batch_size=64, sampler=ChunkSampler(1000, 49000))
 loader_test = DataLoader(cifar10_test, batch_size=64)
 
 

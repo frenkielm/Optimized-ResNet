@@ -25,7 +25,7 @@ def check_accuracy(model, loader):
     model.eval() # Put the model in test mode (the opposite of model.train(), essentially)
     for x, y in loader:
         with torch.no_grad():
-          x_var = Variable(x.type(torch.cuda.FloatTensor))
+          x_var = Variable(x).to(args.device)
 
 
         scores = model(x_var)
@@ -36,36 +36,29 @@ def check_accuracy(model, loader):
     print('Got %d / %d correct (%.2f)' % (num_correct, num_samples, 100 * acc))
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=300)
-parser.add_argument('--learning_rate', type=float, default=1e-3)
 parser.add_argument('--model', type=str, default='Res20')
 parser.add_argument('--data_augment', type=str, default='baseline')
 args = parser.parse_args()
 args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-cifar10_train = dset.CIFAR10('./dataset', train=True, download=True,
-                           transform=transform_augmented) #TAG
-
-cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
-                           transform=T.ToTensor())
-
-cifar10_test = dset.CIFAR10('./dataset', train=False, download=True,
-                          transform=T.ToTensor())
-
-train_dataset_size = len(cifar10_train)
-NUM_TRAIN = int(train_dataset_size * 0.98)
-NUM_VAL = train_dataset_size - NUM_TRAIN
-
-loader_train = DataLoader(cifar10_train, batch_size=64, sampler=ChunkSampler(NUM_TRAIN, 0))
-loader_val = DataLoader(cifar10_val, batch_size=64, sampler=ChunkSampler(NUM_VAL, NUM_TRAIN))
+cifar10_test = dset.CIFAR10('./dataset', train=False, download=True, transform=T.ToTensor())
 loader_test = DataLoader(cifar10_test, batch_size=64)
-model = resnet20().to(args.device)
+
+if(args.model=='Res20'):
+    model = resnet20().to(args.device) 
+elif(args.model=='Res32'):
+    model = resnet32().to(args.device)
+elif(args.model=='Res44'):
+    model = resnet44().to(args.device) 
+elif(args.model=='Res56'):
+    model = resnet56().to(args.device)  
+else:
+    raise ValueError("Unsupported model: {}".format(args.model))
 
 # 加载之前保存的模型权重
-model.load_state_dict(torch.load('checkpoint/resnet18_cifar10.pt'))
+loc = "cuda:0" if torch.cuda.is_available() else "cpu"
+model.load_state_dict(torch.load('checkpoint/resnet18_cifar10.pt',map_location=loc))
 
 # 将模型设置为评估模式
 model.eval()
 check_accuracy(model, loader_test)
-print(NUM_TRAIN)
-print(NUM_VAL)
