@@ -28,10 +28,11 @@ random.seed(seed)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=300)
-parser.add_argument('--learning_rate', type=float, default=1e-3)
+parser.add_argument('--learning_rate', type=float, default=0.001)
 parser.add_argument('--model', type=str, default='Res20')
 parser.add_argument('--data_augment', type=str, default='baseline')
-parser.add_argument('--weight_decay', type=float, default=1e-2)
+parser.add_argument('--weight_decay', type=float, default=5e-5)
+parser.add_argument('--use_cache',type=str,default='no')
 args = parser.parse_args()
 args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -39,7 +40,7 @@ args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 ## 加载数据集
 
 cifar10_train = dset.CIFAR10('./dataset', train=True, download=True,
-                           transform=T.ToTensor()) #TAG
+                           transform=transform_augmented) #TAG
 
 cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
                            transform=T.ToTensor())
@@ -47,9 +48,9 @@ cifar10_val = dset.CIFAR10('./dataset', train=True, download=True,
 cifar10_test = dset.CIFAR10('./dataset', train=False, download=True,
                           transform=T.ToTensor())
 
-loader_train = DataLoader(cifar10_train, batch_size=64, sampler=ChunkSampler(49000, 0))
-loader_val = DataLoader(cifar10_val, batch_size=64, sampler=ChunkSampler(1000, 49000))
-loader_test = DataLoader(cifar10_test, batch_size=64)
+loader_train = DataLoader(cifar10_train, batch_size=32, sampler=ChunkSampler(49000, 0))
+loader_val = DataLoader(cifar10_val, batch_size=32, sampler=ChunkSampler(1000, 49000))
+loader_test = DataLoader(cifar10_test, batch_size=32)
 
 
 
@@ -64,6 +65,11 @@ elif(args.model=='Res56'):
     model = resnet56().to(args.device)  
 else:
     raise ValueError("Unsupported model: {}".format(args.model))
+
+if(args.use_cache=='yes'):
+  loc = "cuda:0" if torch.cuda.is_available() else "cpu"
+  model.load_state_dict(torch.load('checkpoint/resnet18_cifar10.pt',map_location=loc))
+
 loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
@@ -123,7 +129,7 @@ for epoch in range(args.epochs):
     #====================save model=======================
     if valid_epochs_loss[-1] <= valid_loss_min:
         print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(valid_loss_min,valid_epochs_loss[-1]))
-        torch.save(model.state_dict(), 'checkpoint/resnet18_cifar10.pt')
+        torch.save(model.state_dict(), 'checkpoint/Res20.pt')
         valid_loss_min = valid_epochs_loss[-1]
         counter = 0
     else:
