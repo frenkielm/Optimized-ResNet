@@ -27,7 +27,7 @@ random.seed(seed)
 ## 定义超参数
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--epochs', type=int, default=200)
 parser.add_argument('--learning_rate', type=float, default=0.001)
 parser.add_argument('--model', type=str, default='Res20')
 parser.add_argument('--data_augment', type=str, default='baseline')
@@ -89,15 +89,25 @@ for epoch in range(args.epochs):
     model.train()
     train_epoch_loss = []
     idx = 0
+    alpha = 1.0
     for data_x,data_y in loader_train:
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device).long()
-        outputs = model(data_x)
-        optimizer.zero_grad()
-        loss = loss_fn(outputs,data_y)
+        if args.data_augment=='Mixup':
+            lam = np.random.beta(alpha, alpha)
+            index = torch.randperm(data_x.size(0))
+            data_x_mix = lam * data_x + (1 - lam) * data_x[index]
+
+            outputs = model(data_x_mix)
+            optimizer.zero_grad()
+            loss = lam * loss_fn(outputs, data_y) + (1 - lam) * loss_fn(outputs, data_y[index])
+        else:
+            outputs = model(data_x)
+            optimizer.zero_grad()
+            loss = loss_fn(outputs,data_y)
+            
         loss.backward()
         optimizer.step()
-
         train_epoch_loss.append(loss.item())
         train_loss.append(loss.item())
         if idx%(len(loader_train)//2)==0:
@@ -111,6 +121,18 @@ for epoch in range(args.epochs):
     right_sample = 0
     model.eval()
     valid_epoch_loss = []
+    # for data_x,data_y in loader_train:
+    #     data_x = data_x.to(torch.float32).to(args.device)
+    #     data_y = data_y.to(torch.float32).to(args.device).long()
+    #     outputs = model(data_x)
+    #     loss = loss_fn(outputs, data_y)
+    #     _, preds = torch.max(outputs, 1)
+    #     right_sample += (preds == data_y).sum()
+    #     total_sample += preds.size(0)
+    # print("Train_Accuracy:",100*int(right_sample)/int(total_sample),"%")
+
+    # total_sample = 0
+    # right_sample = 0
     for data_x,data_y in loader_val:
         data_x = data_x.to(torch.float32).to(args.device)
         data_y = data_y.to(torch.float32).to(args.device).long()
@@ -123,6 +145,7 @@ for epoch in range(args.epochs):
         total_sample += preds.size(0)
     valid_epochs_loss.append(np.average(valid_epoch_loss))
     print("Val_Accuracy:",100*int(right_sample)/int(total_sample),"%")
+    print("Train_loss:",train_epochs_loss[-1])
     print("Val_loss:",valid_epochs_loss[-1])
     accuracy_val.append(right_sample/total_sample)
     
