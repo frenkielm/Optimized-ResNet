@@ -57,7 +57,7 @@ else:
 
 # 加载之前保存的模型权重
 loc = "cuda:0" if torch.cuda.is_available() else "cpu"
-model.load_state_dict(torch.load('checkpoint/Res20.pt',map_location=loc))
+model.load_state_dict(torch.load('checkpoint/{}.pt'.format(args.model),map_location=loc))
 
 # 将模型设置为评估模式
 model.eval()
